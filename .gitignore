@@ -1,0 +1,19 @@
+# Ignorar ambiente virtual
+env/
+venv/
+
+# Arquivos de variáveis de ambiente
+.env
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Configurações de IDEs
+.vscode/
+.idea/
+*.swp
+
+# Arquivos de configuração do Streamlit
+.streamlit/secrets.toml
