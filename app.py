@@ -8,13 +8,6 @@ def validar(nome, senha):
 
 st.title("Login")
 
-st.markdown("""
-<style>
-[data-testid="stSidebar"] {display: none;}
-[data-testid="collapsedControl"] {display: none;}
-</style>
-""", unsafe_allow_html=True)
-
 # Se o usuário já estiver logado, mostra as opções
 if st.session_state.get("logado"):
     st.success("Login bem-sucedido!")
@@ -33,6 +26,14 @@ if st.session_state.get("logado"):
         st.rerun()
 
 else:
+        
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"] {display: none;}
+    [data-testid="collapsedControl"] {display: none;}
+    </style>
+    """, unsafe_allow_html=True)
+
     with st.form("login_form"):
         nome = st.text_input("Nome: ")
         senha = st.text_input("Senha: ", type="password")

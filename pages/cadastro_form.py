@@ -1,11 +1,5 @@
 import streamlit as st
 
-st.markdown("""
-<style>
-[data-testid="stSidebar"] {display: none;}
-[data-testid="collapsedControl"] {display: none;}
-</style>
-""", unsafe_allow_html=True)
 
 with st.form("cadastro_form"):
     nome = st.text_input("Nome: ")

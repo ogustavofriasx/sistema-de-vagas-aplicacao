@@ -1,12 +1,7 @@
 import streamlit as st
 from database import get_collection_curriculos, get_next_sequence
 
-st.markdown("""
-<style>
-[data-testid="stSidebar"] {display: none;}
-[data-testid="collapsedControl"] {display: none;}
-</style>
-""", unsafe_allow_html=True)
+
 
 collection = get_collection_curriculos()
 

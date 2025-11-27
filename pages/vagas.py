@@ -1,13 +1,63 @@
 import streamlit as st
 from database import get_collection_vagas
+from google import genai
+from google.genai import types
+from pymongo import MongoClient
+from database import get_collection_curriculos
 
 
-st.markdown("""
-<style>
-[data-testid="stSidebar"] {display: none;}
-[data-testid="collapsedControl"] {display: none;}
-</style>
-""", unsafe_allow_html=True)
+client_gemini = genai.Client(api_key=st.secrets["gemini"]["api_key"])
+client_atlas = MongoClient(st.secrets["mongodb"]["uri"])
+db = client_atlas[st.secrets["mongodb"]["database"]]
+
+
+def gerarEmbeddingsPerguntas(txt_query):
+    response = client_gemini.models.embed_content(
+        model="gemini-embedding-001",
+        contents=txt_query,
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_QUERY",
+            output_dimensionality=512
+        )
+    )
+    return response.embeddings[0].values
+
+def getDocsMongodbAtlas(query_embedding):
+    client = MongoClient(st.secrets["mongodb"]["uri"])
+    db = client["atv6"]  # seu banco
+    collection = db["vagas"]
+
+    docs = list(collection.find({}))
+    return docs
+
+
+def gerarPrompt(docs, query):
+
+    contexto = "\n\n".join([str(doc) for doc in docs])
+
+    prompt = f"""
+    Você é um assistente prestativo de MongoDB. Use SOMENTE o contexto fornecido.
+    Se a resposta não estiver no contexto, diga que não sabe.
+
+    CONTEXTO DAS VAGAS:
+    {contexto}
+
+    Pergunta do usuário:
+    {query}
+
+    Se não encontrar a informação no contexto acima, responda:
+    "Nenhum candidato no banco possui essa informação".
+    Não invente dados.
+    """
+
+    resposta = client_gemini.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
+    
+    return resposta.text
+
+
 
 collection = get_collection_vagas()
 
@@ -17,22 +67,47 @@ st.title("Vagas Disponíveis")
 
 vagas_list = list(vagas)
 
-if len(vagas_list) == 0:
-    st.info("Nenhuma vaga cadastrada no momento.")
-else:
-    for vaga in vagas_list:
-        st.subheader(f"{vaga['titulo']} - {vaga['empresa']}")
-        st.write(f"**Descrição:** {vaga['descricao']}")
-        st.write(f"**Localização:** {vaga['cidade']}, {vaga['estado']}")
-        if 'tipo_contratacao' in vaga:
-            st.write(f"**Tipo:** {vaga['tipo_contratacao']}")
-        else:
-            st.write("**Tipo:** Não informado")
-        st.write(f"**Salário:** R$ {vaga['salario']}")
-        st.write(f"**Skills Requeridas:** {', '.join(vaga['skills'])}")
-        st.markdown("---")  
+tab_ia, tab_lista = st.tabs(["Consulta IA", "Listagem de Vagas"])
 
 
-#botao para voltar para o menu
-if st.button("Voltar ao Menu Principal", type="secondary"):
-    st.switch_page("app.py")
+with tab_ia:
+    st.subheader("Pergunte algo sobre as vagas")
+
+    with st.form("ia"):
+        query = st.text_input("Digite sua pergunta:")
+        enviar = st.form_submit_button("Enviar")
+
+        if enviar and query.strip() != "":
+            with st.status("Processando consulta..."):
+                st.write("Gerando embedding...")
+                emb = gerarEmbeddingsPerguntas(query)
+
+                st.write("Consultando MongoDB...")
+                docs = getDocsMongodbAtlas(emb)
+
+                st.write("Gerando resposta com Gemini...")
+                resposta = gerarPrompt(docs, query)
+
+            st.success("Resposta gerada!")
+            st.markdown(f"### Resposta:\n{resposta}")
+
+
+with tab_lista:
+    st.title("Vagas cadastradas no sistema")
+
+    collection = get_collection_vagas()
+    vagas = list(collection.find())
+
+    if len(vagas) == 0:
+        st.info("Nenhuma vaga cadastrada no momento.")
+    else:
+        for vaga in vagas:
+            st.subheader(f"{vaga['titulo']} — {vaga['empresa']}")
+            st.write(f"**Descrição:** {vaga['descricao']}")
+            st.write(f"**Localização:** {vaga['cidade']}, {vaga['estado']}")
+
+            st.write(f"**Tipo:** {vaga.get('tipo_contratacao', 'Não informado')}")
+            st.write(f"**Salário:** R$ {vaga['salario']}")
+            st.write(f"**Skills Requeridas:** {', '.join(vaga['skills'])}")
+
+            st.markdown("---")
