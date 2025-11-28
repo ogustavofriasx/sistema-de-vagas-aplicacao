@@ -18,6 +18,11 @@ def get_collection_curriculos():
     collection_name = st.secrets["mongodb"]["collection_curriculos"]
     return db[collection_name]
 
+def get_collection_users():
+    db = get_database()
+    collection_name = st.secrets["mongodb"]["collection_users"]
+    return db[collection_name]
+
 def get_next_sequence(name, collection):
     db = get_database()
     counter = db["counters"]

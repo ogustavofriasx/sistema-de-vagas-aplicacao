@@ -1,6 +1,8 @@
 import streamlit as st
 from database import get_collection_curriculos, get_next_sequence
+from utils.auth import require_role
 
+require_role(["administrador", "candidato"])
 
 
 collection = get_collection_curriculos()

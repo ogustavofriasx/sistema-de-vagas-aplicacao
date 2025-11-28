@@ -4,7 +4,9 @@ from google import genai
 from google.genai import types
 from pymongo import MongoClient
 from database import get_collection_curriculos
+from utils.auth import require_role
 
+require_role(["administrador", "candidato", "empregador"])
 
 client_gemini = genai.Client(api_key=st.secrets["gemini"]["api_key"])
 client_atlas = MongoClient(st.secrets["mongodb"]["uri"])
