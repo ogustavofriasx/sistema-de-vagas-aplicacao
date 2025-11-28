@@ -5,7 +5,6 @@ from utils.auth import require_role
 import requests
 from time import sleep
 
-require_role(["administrador", "candidato", "empregador"])
 
 #configuração da pagina
 st.set_page_config(

@@ -86,9 +86,9 @@ else:
                 st.warning("Tentativa de login falhou.")
         
         if submit_list:
-            st.switch_page("pages/vagas_listagem.py")
+            st.switch_page("pages/vagas.py")
         
 
     #só testando, talvez aqui não seja um bom lugar
     if st.button("Distribuição Geográfica de Vagas"):
-        st.switch_page("distribuicao_geografica.py")
+        st.switch_page("pages/distribuicao_geografica.py")

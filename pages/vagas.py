@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from database import get_collection_curriculos
 from utils.auth import require_role
 
-require_role(["administrador", "candidato", "empregador"])
+
 
 client_gemini = genai.Client(api_key=st.secrets["gemini"]["api_key"])
 client_atlas = MongoClient(st.secrets["mongodb"]["uri"])
@@ -65,33 +65,11 @@ collection = get_collection_vagas()
 
 vagas = collection.find()
 
-st.title("Vagas Disponíveis")
+st.title("Vagas")
 
 vagas_list = list(vagas)
 
-tab_ia, tab_lista = st.tabs(["Consulta IA", "Listagem de Vagas"])
-
-
-with tab_ia:
-    st.subheader("Pergunte algo sobre as vagas")
-
-    with st.form("ia"):
-        query = st.text_input("Digite sua pergunta:")
-        enviar = st.form_submit_button("Enviar")
-
-        if enviar and query.strip() != "":
-            with st.status("Processando consulta..."):
-                st.write("Gerando embedding...")
-                emb = gerarEmbeddingsPerguntas(query)
-
-                st.write("Consultando MongoDB...")
-                docs = getDocsMongodbAtlas(emb)
-
-                st.write("Gerando resposta com Gemini...")
-                resposta = gerarPrompt(docs, query)
-
-            st.success("Resposta gerada!")
-            st.markdown(f"### Resposta:\n{resposta}")
+tab_lista, tab_ia = st.tabs(["Listagem de Vagas", "Consulta IA"])
 
 
 with tab_lista:
@@ -113,3 +91,29 @@ with tab_lista:
             st.write(f"**Skills Requeridas:** {', '.join(vaga['skills'])}")
 
             st.markdown("---")
+
+with tab_ia:
+    st.subheader("Pergunte algo sobre os curriculos")
+    if require_role(["administrador", "candidato", "empregador"]):
+        with st.form("ia"):
+            query = st.text_input("Digite sua pergunta:")
+            enviar = st.form_submit_button("Enviar")
+
+            if enviar and query.strip() != "":
+                with st.status("Processando consulta..."):
+                    st.write("Gerando embedding...")
+                    emb = gerarEmbeddingsPerguntas(query)
+
+                    st.write("Consultando MongoDB...")
+                    docs = getDocsMongodbAtlas(emb)
+
+                    st.write("Gerando resposta com Gemini...")
+                    resposta = gerarPrompt(docs, query)
+
+                st.success("Resposta gerada!")
+                st.markdown(f"### Resposta:\n{resposta}")
+    else:
+        if st.button("Fazer login", key = "bt1",type="primary"):
+            st.switch_page("app.py")
+        
+
