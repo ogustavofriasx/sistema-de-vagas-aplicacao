@@ -87,4 +87,8 @@ else:
         
         if submit_list:
             st.switch_page("pages/vagas_listagem.py")
+        
 
+    #só testando, talvez aqui não seja um bom lugar
+    if st.button("Distribuição Geográfica de Vagas"):
+        st.switch_page("distribuicao_geografica.py")
