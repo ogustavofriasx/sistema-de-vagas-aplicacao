@@ -2,6 +2,12 @@ import streamlit as st
 from database import get_collection_vagas, get_next_sequence
 from utils.auth import require_role
 
+#configuração da pagina
+st.set_page_config(
+    page_title="Cadastro de Vagas",
+    page_icon="📢",
+    layout="wide"
+)
 
 
 collection = get_collection_vagas()

@@ -5,9 +5,15 @@ from pymongo import MongoClient
 from database import get_collection_curriculos
 from utils.auth import require_role
 
+#configuração da pagina
+st.set_page_config(
+    page_title="Currículos",
+    page_icon="🪪",
+    layout="wide"
+)
+
 
 st.title("Currículos Cadastrados")
-
 
 
 client_gemini = genai.Client(api_key=st.secrets["gemini"]["api_key"])

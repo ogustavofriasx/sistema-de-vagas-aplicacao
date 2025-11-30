@@ -2,6 +2,12 @@ import streamlit as st
 from database import get_database, get_collection_users
 from utils.auth import require_role
 
+#configuração da pagina
+st.set_page_config(
+    page_title="Cadastro de Usuários",
+    page_icon="💻",
+    layout="wide"
+)
 
 
 db = get_database()

@@ -3,6 +3,12 @@ from database import get_collection_curriculos, get_next_sequence
 from utils.auth import require_role
 
 
+#configuração da pagina
+st.set_page_config(
+    page_title="Cadastro de Currículos",
+    page_icon="📝",
+    layout="wide"
+)
 
 
 collection = get_collection_curriculos()

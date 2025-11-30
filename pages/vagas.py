@@ -6,7 +6,12 @@ from pymongo import MongoClient
 from database import get_collection_curriculos
 from utils.auth import require_role
 
-
+#configuração da pagina
+st.set_page_config(
+    page_title="Vagas",
+    page_icon="🔍",
+    layout="wide"
+)
 
 client_gemini = genai.Client(api_key=st.secrets["gemini"]["api_key"])
 client_atlas = MongoClient(st.secrets["mongodb"]["uri"])
@@ -69,7 +74,7 @@ st.title("Vagas")
 
 vagas_list = list(vagas)
 
-tab_lista, tab_ia = st.tabs(["Listagem de Vagas", "Consulta IA"])
+tab_lista, tab_ia, tab_mapa = st.tabs(["Listagem de Vagas", "Consulta IA", "Distribuição Geográfica"])
 
 
 with tab_lista:
@@ -116,4 +121,7 @@ with tab_ia:
         if st.button("Fazer login", key = "bt1",type="primary"):
             st.switch_page("app.py")
         
-
+with tab_mapa:
+    st.subheader("Distribuição Geográfica das Vagas")
+    if st.button("Ver Mapa de Distribuição Geográfica"):
+        st.switch_page("pages/distribuicao_geografica.py")
