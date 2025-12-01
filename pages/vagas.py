@@ -65,6 +65,27 @@ def gerarPrompt(docs, query):
     return resposta.text
 
 
+def buscar_vagas_fts(termo_busca):
+    """
+    busca fts nas vagas
+    """
+    collection = get_collection_vagas()
+    
+    if not termo_busca or termo_busca.strip() == "":
+        return []
+    
+    try:
+        #busca usando o indice de texto
+        resultados = collection.find(
+            {"$text": {"$search": termo_busca}},
+            {"score": {"$meta": "textScore"}}
+        ).sort([("score", {"$meta": "textScore"})])
+        
+        return list(resultados)
+    except Exception as e:
+        st.error(f"Erro na busca: {str(e)}")
+        st.info("Certifique-se de que o índice de texto foi criado na coleção 'vagas'")
+        return []
 
 collection = get_collection_vagas()
 
@@ -74,7 +95,7 @@ st.title("Vagas")
 
 vagas_list = list(vagas)
 
-tab_lista, tab_ia, tab_mapa = st.tabs(["Listagem de Vagas", "Consulta IA", "Distribuição Geográfica"])
+tab_lista, tab_ia, tab_mapa, tab_fts = st.tabs(["Listagem de Vagas", "Consulta IA", "Distribuição Geográfica", "Buscar"])
 
 
 with tab_lista:
@@ -120,8 +141,112 @@ with tab_ia:
     else:
         if st.button("Fazer login", key = "bt1",type="primary"):
             st.switch_page("app.py")
+
+with tab_fts:
+    st.subheader("Busca Full-Text Search de Vagas")
+    
+    st.markdown("""
+    **Como usar:**
+    - Digite palavras-chave relacionadas a cargo, empresa, skills ou descrição
+    - Você pode usar múltiplos termos separados por espaço
+    - Exemplo: "desenvolvedor python" ou "analista dados"
+    """)
+    
+    with st.form("fts_vagas"):
+        termo_busca = st.text_input(
+            "Digite os termos de busca:",
+            placeholder="Ex: desenvolvedor, python, remoto, etc."
+        )
+        
+        #filtros adicionais, talvez não precisa
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filtrar_cidade = st.text_input("Filtrar por cidade (opcional):")
+        with col2:
+            filtrar_tipo = st.selectbox(
+                "Tipo de contratação:",
+                ["Todos", "CLT", "PJ", "Estágio", "Freelancer"]
+            )
+        with col3:
+            salario_min = st.number_input(
+                "Salário mínimo (R$):",
+                min_value=0,
+                value=0,
+                step=500
+            )
+        
+        buscar = st.form_submit_button("Buscar", type="primary")
+    
+    if buscar:
+        if termo_busca.strip() == "":
+            st.warning("Por favor, digite um termo de busca.")
+        else:
+            with st.spinner("Buscando vagas..."):
+                resultados = buscar_vagas_fts(termo_busca)
+                
+                # Aplicar filtros adicionais
+                if filtrar_cidade:
+                    resultados = [r for r in resultados if filtrar_cidade.lower() in r.get('cidade', '').lower()]
+                if filtrar_tipo != "Todos":
+                    resultados = [r for r in resultados if r.get('tipo_contratacao') == filtrar_tipo]
+                if salario_min > 0:
+                    resultados = [r for r in resultados if r.get('salario', 0) >= salario_min]
+                
+                if len(resultados) == 0:
+                    st.info(f"Nenhuma vaga encontrada para '{termo_busca}'")
+                    st.markdown("**Dicas:**")
+                    st.markdown("- Tente termos mais genéricos")
+                    st.markdown("- Verifique a ortografia")
+                    st.markdown("- Use sinônimos ou termos relacionados")
+                else:
+                    st.success(f"Encontradas {len(resultados)} vaga(s)")
+                    
+                    for vaga in resultados:
+                        score = vaga.get('score', 0)
+                        
+                        with st.expander(f"{vaga['titulo']} - {vaga['empresa']} (Relevância: {score:.2f})"):
+                            col_a, col_b = st.columns(2)
+                            
+                            with col_a:
+                                st.write(f"**Localização:** {vaga['cidade']}, {vaga['estado']}")
+                                st.write(f"**Tipo:** {vaga.get('tipo_contratacao', 'Não informado')}")
+                                st.write(f"**Salário:** R$ {vaga['salario']:,.2f}".replace(',', '.'))
+                            
+                            with col_b:
+                                st.write(f"**Skills:** {', '.join(vaga['skills'])}")
+                            
+                            st.write(f"**Descrição:** {vaga['descricao']}")
+                        
+                        st.markdown("---")
+    
+    #informações sobre a busca
+    with st.expander("ℹ Informações sobre a busca"):
+        st.markdown("""
+        **Como funciona o Full-Text Search:**
+        
+        O FTS busca nos seguintes campos:
+        - Título da vaga
+        - Descrição
+        - Nome da empresa
+        - Skills requeridas
+        
+        **Índice necessário:**
+        Se você ainda não criou o índice, execute no MongoDB:
+        ```javascript
+        db.vagas.createIndex({
+          "titulo": "text",
+          "descricao": "text",
+          "empresa": "text",
+          "skills": "text"
+        })
+        ```
+        """)
         
 with tab_mapa:
     st.subheader("Distribuição Geográfica das Vagas")
     if st.button("Ver Mapa de Distribuição Geográfica"):
         st.switch_page("pages/distribuicao_geografica.py")
+
+#botao para voltar para o menu
+if st.button("Voltar ao Menu Principal", type="secondary"):
+    st.switch_page("app.py")
