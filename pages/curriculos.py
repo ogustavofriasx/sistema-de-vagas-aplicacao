@@ -37,7 +37,7 @@ def gerarEmbeddingsPerguntas(txt_query):
 # Função que consulta o MongoDB Atlas usando vector search
 def getDocsMongodbAtlas(query_embedding):
     client = MongoClient(st.secrets["mongodb"]["uri"])
-    db = client["atv6"]  # seu banco
+    db = client["sistema_de_vagas"]  # seu banco
     collection = db["curriculos"]
 
     docs = list(collection.find({}))
@@ -71,7 +71,29 @@ def gerarPrompt(docs, query):
     
     return resposta.text
 
+#função pra busca do fts
+def buscar_curriculos_fts(termo_busca):
+    """
+    busca do fts nos curriculos
+    """
 
+    collection = get_collection_curriculos()
+
+    if not termo_busca or termo_busca.strip() == "":
+        return []
+    
+    try:
+        #busca usando o indice de texto
+        resultados = collection.find(
+            {"$text": {"$search": termo_busca}},
+            {"score": {"$meta": "textScore"}}
+        ).sort([("score", {"$meta": "textScore"})])
+
+        return list(resultados)
+    except Exception as e:
+        st.error(f"Erro na busca: {str(e)}")
+        st.info("Certifique-se de que o índice de texto foi criado na coleção 'currículos'")
+        return []
 
 collection = get_collection_curriculos()
 
@@ -82,7 +104,7 @@ curriulos = collection.find()
 curriculos_list = list(curriulos)
 
 
-tab_lista, tab_ia, tab_fts = st.tabs(["Listagem de Curriculos", "Consulta IA", "Consulta FTS"])
+tab_lista, tab_ia, tab_fts = st.tabs(["Listagem de Curriculos", "Consulta IA", "Buscar FTS"])
 
 
 with tab_lista:
@@ -135,10 +157,101 @@ with tab_ia:
 with tab_fts:
     st.subheader("Busca FTS nos currículos")
     if require_role(["administrador", "empregador"]):
+        st.markdown("""
+        **Como usar:**
+        - Digite palavras-chave relacionadas a skills, formação, experiência ou empresas
+        - Você pode usar múltiplos termos separados por espaço
+        - Exemplo: "python javascript" ou "engenheiro senior"
+        """)
+
         with st.form("fts"):
-            st.write("### Consulta Full-Text Search (FTS)")
-            enviar = st.form_submit_button("Buscar")
+            termo_busca = st.text_input(
+                "Digite os termos de busca:",
+                placeholder="Ex: python, react, engenheiro, etc."
+            )
+
+            #opções de filtro adicional
+            col1, col2 = st.columns(2)
+            with col1:
+                filtrar_cidade = st.text_input("Filtrar por cidade:")#testando, achoq vou tirar dps
+            with col2:
+                filtrar_estado = st.text_input("Filtrar por estado")#msm coisa da cidade
+
+            buscar = st.form_submit_button("Buscar", type="primary")
+
+        if buscar:
+            if termo_busca.strip() == "":
+                st.warning("por favor, digite um termo de busca")
+            else:
+                with st.spinner("Buscando currículos..."):
+                    resultados = buscar_curriculos_fts(termo_busca)
+
+                    #aplicar filtros adicionais se fornecidos
+                    if filtrar_cidade:
+                        resultados = [r for r in resultados if filtrar_cidade.lower() in r.get('cidade', '').lower()]
+                    if filtrar_estado:
+                        resultados = [r for r in resultados if filtrar_estado.lower() in r.get('estado', '').lower()]
+
+                    if len(resultados) == 0:
+                        st.info(f"Nenhum curriculo encontrado para '{termo_busca}'")
+                        st.markdown("**Dicas**")
+                        st.markdown("- Tente termos mais genéricos")
+                        st.markdown("- Verifique a ortografia")
+                        st.markdown("- Use sinônimos ou termos relacionados")
+                    else:
+                        st.success(f"Encontrados {len(resultados)} currículo(s)")
+
+                        for curriculo in resultados:
+                            #mostrar score de relevância se disponível
+                            score = curriculo.get('score', 0)
+                                
+                            with st.expander(f"{curriculo['nome']} - Relevância: {score:.2f}"):
+                                col_a, col_b = st.columns(2)
+                                    
+                                with col_a:
+                                    st.write(f"**Email:** {curriculo['email']}")
+                                    st.write(f"**Telefone:** {curriculo['telefone']}")
+                                    st.write(f"**Localização:** {curriculo.get('cidade', 'N/A')}, {curriculo.get('estado', 'N/A')}")
+                                    st.write(f"**Idiomas:** {', '.join(curriculo['idiomas'])}")
+                                    
+                                with col_b:
+                                    st.write(f"**Skills:** {', '.join(curriculo['skills'])}")
+                                    st.write(f"**Empresas Anteriores:** {', '.join(curriculo['empresas_previas'])}")
+                                    
+                                st.write(f"**Formação:** {curriculo['formacao']}")
+                                st.write(f"**Experiência:** {curriculo['experiencia']}")
+                                
+                            st.markdown("---")
+
+        #dica sobre o índice
+        with st.expander("ℹInformações sobre a busca"):
+            st.markdown("""
+            **Como funciona o Full-Text Search:**
+                
+            O FTS busca nos seguintes campos:
+            - Nome do candidato
+            - Formação acadêmica
+            - Experiência profissional
+            - Skills
+            - Empresas anteriores
+                
+            **Índice necessário:**
+            Se você ainda não criou o índice, execute no MongoDB:
+            ```javascript
+            db.curriculos.createIndex({
+            "nome": "text",
+            "formacao": "text",
+            "experiencia": "text",
+            "skills": "text",
+            "empresas_previas": "text"
+            })
+            ```
+            """)
+        #st.write("### Consulta Full-Text Search (FTS)")
+        #enviar = st.form_submit_button("Buscar")
+            
     else:
+        #st.info("Faça login como administrador ou empregador para usar a busca.")
         if st.button("Fazer login", key = "bt3", type="primary"):
             st.switch_page("app.py")
 
