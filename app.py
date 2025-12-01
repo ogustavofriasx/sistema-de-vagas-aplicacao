@@ -55,6 +55,8 @@ if st.session_state.get("logado"):
             st.switch_page("pages/cadastro_curriculo.py")
         if st.button("Cadastrar Usuários"):
             st.switch_page("pages/cadastro_form.py")
+        if st.button("Matching"):
+            st.switch_page("pages/matching.py")
 
         if st.button("Sair", type="primary"):
             st.session_state["logado"] = False
