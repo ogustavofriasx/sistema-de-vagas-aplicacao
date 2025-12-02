@@ -24,6 +24,8 @@ O banco de dados foi inicializado a partir dos arquivos previamente populados e 
 
 A aplicação utiliza o MongoDB como banco de dados principal, organizado em três coleções: **Usuários**, **Currículos** e **Vagas**. Utilizamos do Atlas, versão em nuvem do MongoDB, para trabalharmos entre nós e podermos subir para a nuvem uma aplicação funcional.
 
+Exemplos da estrutura das Collections:
+
 **Collection Usuários**
 
 ```json
