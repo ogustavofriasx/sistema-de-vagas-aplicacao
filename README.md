@@ -1,4 +1,4 @@
-# Sistema de Vagas — Aplicação Web Completa
+# Sistema de Vagas — Aplicação Web
 
 Desenvolvido por: Arnaldo Godoy, Gustavo Gomes e Gustavo Frias
 
