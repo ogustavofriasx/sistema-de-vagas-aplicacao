@@ -36,7 +36,7 @@ Exemplos da estrutura das Collections:
   "tipo": "administrador"
 }
 ````
-**Collection Curriculos**
+**Collection Currículos**
 
 ```json
 {
