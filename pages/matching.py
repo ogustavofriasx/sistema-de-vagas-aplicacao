@@ -13,6 +13,81 @@ st.set_page_config(
 
 st.title("🔍 Matching Automático (com FTS Score)")
 
+
+st.markdown("""
+<style>
+[data-testid="stSidebarNav"] {display: none;}   /* esconde a lista automática */
+[data-testid="stSidebar"] section:nth-child(1) {padding-top: 0;}
+</style>
+""", unsafe_allow_html=True)
+
+
+with st.sidebar:
+
+    st.title("Sistema de Vagas")
+    
+    nome = st.session_state.get("nome", "")
+    tipo = st.session_state.get("tipo", "")
+
+    st.write(f"👤 {nome} ({tipo})")
+
+    st.divider()
+
+    if tipo == "administrador":
+        if st.button("Home", type="primary", use_container_width=True):
+            st.switch_page("app.py")
+
+        if st.button("Cadastrar Currículo",type="primary", use_container_width=True):
+            st.switch_page("pages/cadastrar_curriculo.py")
+
+        if st.button("Cadastrar Usuário", type="primary", use_container_width=True):
+            st.switch_page("pages/cadastrar_usuarios.py")
+        
+        if st.button("Cadastrar Vaga", type="primary", use_container_width=True):
+            st.switch_page("pages/cadastrar_vagas.py")
+        
+        if st.button("Currículos", type="primary", use_container_width=True):
+            st.switch_page("pages/curriculos.py")
+        
+        if st.button("Mapa de vagas", type="primary", use_container_width=True):
+            st.switch_page("pages/distribuicao_geografica.py")
+        
+        if st.button("Matching", type="primary", use_container_width=True):
+            st.switch_page("pages/matching.py")
+
+        if st.button("Vagas", type="primary", use_container_width=True):
+            st.switch_page("pages/vagas.py")
+
+    elif tipo == "empregador":
+        if st.button("Home", type="primary", use_container_width=True):
+            st.switch_page("app.py")
+
+        if st.button("Cadastrar Vaga", type="primary", use_container_width=True):
+            st.switch_page("pages/cadastrar_vagas.py")
+
+        if st.button("Currículos", type="primary", use_container_width=True):
+            st.switch_page("pages/curriculos.py")
+
+        if st.button("Matching", type="primary", use_container_width=True):
+            st.switch_page("pages/matching.py")
+
+        if st.button("Vagas", type="primary", use_container_width=True):
+            st.switch_page("pages/vagas.py")
+
+    elif tipo == "candidato":
+        if st.button("Home", type="primary", use_container_width=True):
+            st.switch_page("app.py")
+
+        if st.button("Cadastrar Currículo", type="primary", use_container_width=True):
+            st.switch_page("pages/cadastrar_curriculo.py")
+
+        if st.button("Mapa de vagas",type="primary", use_container_width=True):
+            st.switch_page("pages/distribuicao_geografica.py")
+
+        if st.button("Vagas", type="primary", use_container_width=True):
+            st.switch_page("pages/vagas.py")
+
+
 def buscar_candidatos_por_skills_fts(skills_vaga, limite=10):
     """
     Busca candidatos usando FTS baseado nas skills da vaga
